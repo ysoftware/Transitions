@@ -16,8 +16,20 @@ class ViewController: UIViewController {
     @IBOutlet var cardView: UIView!
     let animator = DigitalCardAnimator()
     
-    @IBAction func didTap(_ sender: Any) {
-        performSegue(withIdentifier: "Present", sender: self)
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        animator.scaleView = 0.9
+    }
+    
+    @IBAction func didTap(_ sender: UIButton) {
+        if cardView.isHidden {
+            sender.setTitle("Prepare", for: .normal)
+            performSegue(withIdentifier: "Present", sender: self)
+        }
+        else {
+            sender.setTitle("Present", for: .normal)
+            cardView.isHidden = true
+        }
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -35,8 +47,8 @@ class ViewController: UIViewController {
         
         let snapshot = cardView.snapshotView()!
         snapshot.translatesAutoresizingMaskIntoConstraints = false
-        snapshot.widthAnchor.constraint(equalToConstant: 100)
-        snapshot.heightAnchor.constraint(equalToConstant: 150)
+        snapshot.widthAnchor.constraint(equalToConstant: cardView.frame.width)
+        snapshot.heightAnchor.constraint(equalToConstant: cardView.frame.height)
         vc.cardView = snapshot
 
         // prepare view for transitioning
@@ -84,8 +96,8 @@ class ViewController2: UIViewController {
         
         view.addSubview(cardView)
         cardView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        cardView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-        view.layoutIfNeeded()
+        cardView.topAnchor.constraint(
+            equalTo: view.topAnchor, constant: 200).isActive = true
     }
     
     @IBAction func didTap(_ sender: Any) {
@@ -98,12 +110,22 @@ class ViewController2: UIViewController {
 class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     
     public var isPresenting: Bool = true
-    private let duration:TimeInterval = 0.7
+    public var scaleView: CGFloat = 1
+    
+    private let fadeDuration: TimeInterval = 0.5
+    private let scaleDuration: TimeInterval = 0.8
+    private let scaleDelay: TimeInterval = 0.4
+    private let translateDuration: TimeInterval = 0.5
     
     func transitionDuration(
         using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
         
-        return 1
+        if isPresenting {
+            return translateDuration
+        }
+        else {
+            return fadeDuration - scaleDelay + scaleDuration
+        }
     }
     
     func animateTransition(
@@ -126,18 +148,19 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
         to.backgroundView.alpha = 0
         to.cardView.transform = CGAffineTransform(scaleX: 0, y: 0)
         
-        UIView.animate(withDuration: duration) {
+        UIView.animate(withDuration: fadeDuration) {
             to.backgroundView.alpha = 1
         }
         
-        UIView.animate(withDuration: duration,
-                       delay: duration,
-                       usingSpringWithDamping: 0.8,
+        UIView.animate(withDuration: scaleDuration,
+                       delay: scaleDelay,
+                       usingSpringWithDamping: 0.65,
                        initialSpringVelocity: 0,
-                       options: .curveEaseInOut,
+                       options: .curveEaseOut,
                        animations: {
                         
-                        to.cardView.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+                        to.cardView.transform = CGAffineTransform(scaleX: self.scaleView,
+                                                                  y: self.scaleView)
         }) { _ in
             transitionContext.completeTransition(true)
         }
@@ -150,17 +173,51 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
         let from = transitionContext.viewController(forKey: .from) as! ViewController2
         let fromView = transitionContext.view(forKey: .from)!
         
+        // prepare views
         containerView.addSubview(toView)
         containerView.addSubview(fromView)
         
-        let cardViewOrigin = to.stackView.frame.origin
-        let cardViewFrame = CGRect(origin: cardViewOrigin, size: to.cardView.frame.size)
+        // get frames
+        let oldFrame = from.cardView.frame
+        let newFrame = CGRect(origin: to.stackView.frame.origin,
+                              size: to.cardView.frame.size)
         
-        UIView.animate(withDuration: duration, animations: {
+        // create path
+        let path = UIBezierPath()
+        path.move(to: CGPoint(x: oldFrame.midX, y: oldFrame.midY))
+        path.addQuadCurve(to: CGPoint(x: newFrame.midX,
+                                      y: newFrame.midY),
+                          controlPoint: CGPoint(x: newFrame.midX,
+                                                y: oldFrame.midY))
+        
+        // setup animations
+        let scale = CAKeyframeAnimation(keyPath: "transform.scale")
+        scale.values = [scaleView, 1]
+        scale.duration = translateDuration
+        scale.isRemovedOnCompletion = false
+        
+        let translate = CAKeyframeAnimation(keyPath: "position")
+        translate.path = path.cgPath
+        translate.duration = translateDuration
+        translate.isRemovedOnCompletion = false
+        
+        let animations = CAAnimationGroup()
+        animations.animations = [scale, translate]
+        animations.duration = translateDuration
+        animations.isRemovedOnCompletion = false
+
+        // remove after animation finishes
+        from.cardView.transform = CGAffineTransform(scaleX: 0, y: 0)
+        
+        // add animations
+        from.cardView.layer.add(animations, forKey: "")
+        
+        // add uiview animations
+        UIView.animate(withDuration: translateDuration, animations: {
             to.cardView.isHidden = false
             from.backgroundView.alpha = 0
-            from.cardView.frame = cardViewFrame
         }, completion: { _ in
+            from.cardView.removeFromSuperview()
             to.cardView.alpha = 1
             transitionContext.completeTransition(true)
         })
