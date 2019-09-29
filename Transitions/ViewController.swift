@@ -215,11 +215,14 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
         animations.animations = [scale, translate]
         animations.duration = translateDuration
         
+        // remove after animation finishes
+        from.cardView.transform = CGAffineTransform(scaleX: 0, y: 0)
+        
         // add animations
         from.cardView.layer.add(animations, forKey: "")
         
-        // complete transition 1 frame before screen 2 jumps back
-        let duration = translateDuration - 0.017
+        // complete transition a couple of frames before screen2 goes blank
+        let duration = translateDuration - 0.05
         
         // add uiview animations
         UIView.animate(withDuration: duration, animations: {
