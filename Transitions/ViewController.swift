@@ -18,12 +18,29 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        animator.scaleView = 0.9
+        animator.scaleView = 1
+        
+        stackView.arrangedSubviews.forEach { view in
+            view.layer.cornerRadius = 10
+        }
     }
     
     @IBAction func didTap(_ sender: UIButton) {
         if cardView.isHidden {
             sender.setTitle("Prepare", for: .normal)
+            
+            // prepare view for snapshotting
+            stackView.removeArrangedSubview(cardView)
+            cardView.removeFromSuperview()
+            cardView.isHidden = false
+            
+            // add view to hierarchy but off screen
+            view.addSubview(cardView)
+            cardView.trailingAnchor.constraint(
+                equalTo: view.leadingAnchor).isActive = true
+            cardView.topAnchor.constraint(
+                equalTo: view.topAnchor).isActive = true
+            
             performSegue(withIdentifier: "Present", sender: self)
         }
         else {
@@ -35,21 +52,18 @@ class ViewController: UIViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         guard let vc = segue.destination as? ViewController2 else { return }
         vc.transitioningDelegate = self
+        vc.modalPresentationStyle = .fullScreen
         
-        // prepare view for snapshotting
-        stackView.removeArrangedSubview(cardView)
-        cardView.removeFromSuperview()
-        cardView.isHidden = false
-        
-        view.addSubview(cardView)
-        cardView.trailingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        cardView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-        
+        // create and setup snapshot
         let snapshot = cardView.snapshotView()!
         snapshot.translatesAutoresizingMaskIntoConstraints = false
-        snapshot.widthAnchor.constraint(equalToConstant: cardView.frame.width)
-        snapshot.heightAnchor.constraint(equalToConstant: cardView.frame.height)
+        snapshot.widthAnchor.constraint(
+            equalToConstant: cardView.frame.width).isActive = true
+        snapshot.heightAnchor.constraint(
+            equalToConstant: cardView.frame.height).isActive = true
         vc.cardView = snapshot
+        vc.cardView.layer.cornerRadius = 10
+        vc.cardView.clipsToBounds = true
 
         // prepare view for transitioning
         cardView.isHidden = true
@@ -97,7 +111,7 @@ class ViewController2: UIViewController {
         view.addSubview(cardView)
         cardView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         cardView.topAnchor.constraint(
-            equalTo: view.topAnchor, constant: 200).isActive = true
+            equalTo: view.topAnchor, constant: 100).isActive = true
     }
     
     @IBAction func didTap(_ sender: Any) {
@@ -114,7 +128,7 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     
     private let fadeDuration: TimeInterval = 0.5
     private let scaleDuration: TimeInterval = 0.8
-    private let scaleDelay: TimeInterval = 0.4
+    private let scaleDelay: TimeInterval = 0.3
     private let translateDuration: TimeInterval = 0.5
     
     func transitionDuration(
@@ -156,7 +170,7 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
                        delay: scaleDelay,
                        usingSpringWithDamping: 0.65,
                        initialSpringVelocity: 0,
-                       options: .curveEaseOut,
+                       options: .curveEaseInOut,
                        animations: {
                         
                         to.cardView.transform = CGAffineTransform(scaleX: self.scaleView,
@@ -185,35 +199,30 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
         // create path
         let path = UIBezierPath()
         path.move(to: CGPoint(x: oldFrame.midX, y: oldFrame.midY))
-        path.addQuadCurve(to: CGPoint(x: newFrame.midX,
-                                      y: newFrame.midY),
-                          controlPoint: CGPoint(x: newFrame.midX,
-                                                y: oldFrame.midY))
+        path.addQuadCurve(to: CGPoint(x: newFrame.midX, y: newFrame.midY),
+                          controlPoint: CGPoint(x: newFrame.midX, y: oldFrame.midY))
         
         // setup animations
         let scale = CAKeyframeAnimation(keyPath: "transform.scale")
         scale.values = [scaleView, 1]
         scale.duration = translateDuration
-        scale.isRemovedOnCompletion = false
         
         let translate = CAKeyframeAnimation(keyPath: "position")
         translate.path = path.cgPath
         translate.duration = translateDuration
-        translate.isRemovedOnCompletion = false
         
         let animations = CAAnimationGroup()
         animations.animations = [scale, translate]
         animations.duration = translateDuration
-        animations.isRemovedOnCompletion = false
-
-        // remove after animation finishes
-        from.cardView.transform = CGAffineTransform(scaleX: 0, y: 0)
         
         // add animations
         from.cardView.layer.add(animations, forKey: "")
         
+        // complete transition 1 frame before screen 2 jumps back
+        let duration = translateDuration - 0.017
+        
         // add uiview animations
-        UIView.animate(withDuration: translateDuration, animations: {
+        UIView.animate(withDuration: duration, animations: {
             to.cardView.isHidden = false
             from.backgroundView.alpha = 0
         }, completion: { _ in
