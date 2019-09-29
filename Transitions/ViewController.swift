@@ -55,7 +55,7 @@ class ViewController: UIViewController {
         vc.modalPresentationStyle = .fullScreen
         
         // create and setup snapshot
-        let snapshot = cardView.snapshotView()!
+        let snapshot = cardView.snapshotView(afterScreenUpdates: true)!
         snapshot.translatesAutoresizingMaskIntoConstraints = false
         snapshot.widthAnchor.constraint(
             equalToConstant: cardView.frame.width).isActive = true
@@ -109,7 +109,8 @@ class ViewController2: UIViewController {
         guard cardView.superview == nil else { return }
         
         view.addSubview(cardView)
-        cardView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        cardView.centerXAnchor.constraint(
+            equalTo: view.centerXAnchor).isActive = true
         cardView.topAnchor.constraint(
             equalTo: view.topAnchor, constant: 100).isActive = true
     }
@@ -233,24 +234,5 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
             to.cardView.alpha = 1
             transitionContext.completeTransition(true)
         })
-    }
-}
-
-public extension UIView {
-    
-    func snapshotImage() -> UIImage? {
-        UIGraphicsBeginImageContextWithOptions(bounds.size, isOpaque, 0)
-        drawHierarchy(in: bounds, afterScreenUpdates: true)
-        let snapshotImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        return snapshotImage
-    }
-    
-    func snapshotView() -> UIView? {
-        if let snapshotImage = snapshotImage() {
-            return UIImageView(image: snapshotImage)
-        } else {
-            return nil
-        }
     }
 }
