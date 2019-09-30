@@ -73,6 +73,10 @@ class ViewController: UIViewController {
     }
     
     func animateIn(duration: TimeInterval) -> CGRect {
+        
+        // complete transition a couple of frames before screen2 goes blank
+        let duration = duration - 0.05
+        
         UIView.animate(
             withDuration: duration, delay: 0, options: .curveEaseInOut, animations: {
                 self.cardView.isHidden = false
@@ -199,13 +203,9 @@ class ViewController2: UIViewController {
         // add animations
         cardView.layer.add(animations, forKey: "")
         
-        // complete transition a couple of frames before screen2 goes blank
-        let duration = translateDuration - 0.05
-        
         // add uiview animations
-        
         UIView.animate(
-            withDuration: duration, delay: 0, options: .curveEaseInOut, animations: {
+            withDuration: translateDuration, delay: 0, options: .curveEaseInOut, animations: {
                 self.backgroundView.alpha = 0
         }) { _ in
             self.cardView.removeFromSuperview()
