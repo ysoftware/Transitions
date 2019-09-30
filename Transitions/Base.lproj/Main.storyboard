@@ -17,7 +17,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Ohy-kT-7Oz">
-                                <rect key="frame" x="311" y="94" width="53" height="30"/>
+                                <rect key="frame" x="311" y="812" width="53" height="30"/>
                                 <state key="normal" title="Present">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </state>
@@ -26,7 +26,7 @@
                                 </connections>
                             </button>
                             <stackView opaque="NO" contentMode="scaleToFill" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="ulr-Ax-mAK">
-                                <rect key="frame" x="10" y="562" width="330" height="250"/>
+                                <rect key="frame" x="10" y="542" width="330" height="250"/>
                                 <subviews>
                                     <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="S82-Jg-ijQ">
                                         <rect key="frame" x="-160" y="0.0" width="160" height="250"/>
@@ -90,10 +90,10 @@
                         <color key="backgroundColor" white="0.66666666666666663" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstItem="Ohy-kT-7Oz" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="10" id="6z2-Dd-vnf"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="ulr-Ax-mAK" secondAttribute="bottom" constant="50" id="9AB-7v-Og7"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="ulr-Ax-mAK" secondAttribute="bottom" constant="70" id="9AB-7v-Og7"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="Ohy-kT-7Oz" secondAttribute="trailing" constant="50" id="Wj9-Ej-wNm"/>
                             <constraint firstItem="ulr-Ax-mAK" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="10" id="cAa-JM-ieB"/>
-                            <constraint firstItem="Ohy-kT-7Oz" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="50" id="n6h-hL-NEx"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="Ohy-kT-7Oz" secondAttribute="bottom" constant="20" id="zlw-rQ-duh"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
@@ -121,7 +121,7 @@
                                 <viewLayoutGuide key="safeArea" id="Tap-p3-14n"/>
                             </view>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="LHj-Md-6na">
-                                <rect key="frame" x="310" y="50" width="54" height="30"/>
+                                <rect key="frame" x="310" y="758" width="54" height="30"/>
                                 <state key="normal" title="Dismiss">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </state>
@@ -138,7 +138,7 @@
                             <constraint firstItem="LHj-Md-6na" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="aEw-U3-cmE" secondAttribute="leading" constant="10" id="Yyz-Lo-vv8"/>
                             <constraint firstItem="pmC-wE-F7e" firstAttribute="trailing" secondItem="LHj-Md-6na" secondAttribute="trailing" constant="50" id="h07-Zb-3uN"/>
                             <constraint firstAttribute="bottom" secondItem="3NG-1Z-Omm" secondAttribute="bottom" id="hu3-qX-kbY"/>
-                            <constraint firstItem="LHj-Md-6na" firstAttribute="top" secondItem="pmC-wE-F7e" secondAttribute="top" constant="50" id="yga-7h-NWc"/>
+                            <constraint firstItem="pmC-wE-F7e" firstAttribute="bottom" secondItem="LHj-Md-6na" secondAttribute="bottom" constant="20" id="yga-7h-NWc"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="pmC-wE-F7e"/>
                     </view>

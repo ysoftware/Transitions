@@ -129,8 +129,8 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     
     private let fadeDuration: TimeInterval = 0.5
     private let scaleDuration: TimeInterval = 0.8
-    private let scaleDelay: TimeInterval = 0.3
-    private let translateDuration: TimeInterval = 0.5
+    private let scaleDelay: TimeInterval = 0.2
+    private let translateDuration: TimeInterval = 0.7
     
     func transitionDuration(
         using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
@@ -207,10 +207,12 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
         let scale = CAKeyframeAnimation(keyPath: "transform.scale")
         scale.values = [scaleView, 1]
         scale.duration = translateDuration
+        scale.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         
         let translate = CAKeyframeAnimation(keyPath: "position")
         translate.path = path.cgPath
         translate.duration = translateDuration
+        translate.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         
         let animations = CAAnimationGroup()
         animations.animations = [scale, translate]
@@ -226,13 +228,17 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
         let duration = translateDuration - 0.05
         
         // add uiview animations
-        UIView.animate(withDuration: duration, animations: {
-            to.cardView.isHidden = false
-            from.backgroundView.alpha = 0
-        }, completion: { _ in
+        
+        UIView.animate(
+            withDuration: duration, delay: 0, options: .curveEaseInOut, animations: {
+                
+                to.cardView.isHidden = false
+                from.backgroundView.alpha = 0
+        }) { _ in
+            
             from.cardView.removeFromSuperview()
             to.cardView.alpha = 1
             transitionContext.completeTransition(true)
-        })
+        }
     }
 }
