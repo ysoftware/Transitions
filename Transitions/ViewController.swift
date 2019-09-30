@@ -10,7 +10,7 @@ import UIKit
 
 // MARK: - First View Controller
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, DigitalCardAnimatorScreen1 {
     
     @IBOutlet weak var stackView: UIStackView!
     @IBOutlet var cardView: UIView!
@@ -108,7 +108,7 @@ extension ViewController: UIViewControllerTransitioningDelegate {
 
 // MARK: - Second View Controller
 
-class ViewController2: UIViewController {
+class ViewController2: UIViewController, DigitalCardAnimatorScreen2 {
     
     private let fadeDuration: TimeInterval = 0.5
     private let scaleDuration: TimeInterval = 0.8
@@ -169,9 +169,7 @@ class ViewController2: UIViewController {
         }
     }
     
-    func animateOut(newFrame: CGRect,
-                    fromScale: CGFloat,
-                    completion: @escaping ()->Void) {
+    func animateOut(newFrame: CGRect, fromScale: CGFloat, completion: @escaping ()->Void) {
         
         // get frames
         let oldFrame = cardView.frame
@@ -216,26 +214,39 @@ class ViewController2: UIViewController {
 
 // MARK: - Animator
 
-class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
+protocol DigitalCardAnimatorScreen1 {
+    
+    func animateIn(duration: TimeInterval) -> CGRect
+}
+
+protocol DigitalCardAnimatorScreen2 {
+    
+    func animateInDuration() -> TimeInterval
+    func animateOutDuration() -> TimeInterval
+    func animateIn(scale: CGFloat, completion: @escaping ()->Void)
+    func animateOut(newFrame: CGRect, fromScale: CGFloat, completion: @escaping ()->Void)
+}
+
+public class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     
     public var isPresenting: Bool = true
     public var scaleView: CGFloat = 1
     
-    func transitionDuration(
+    public func transitionDuration(
         using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-        guard let transitionContext = transitionContext else { return 0 }
-        
-        if isPresenting {
-            let to = transitionContext.viewController(forKey: .to) as! ViewController2
-            return to.animateInDuration()
+
+        if isPresenting, let screen = transitionContext?.viewController(forKey: .to)
+            as? DigitalCardAnimatorScreen2 {
+            return screen.animateInDuration()
         }
-        else {
-            let from = transitionContext.viewController(forKey: .from) as! ViewController2
-            return from.animateOutDuration()
+        else if let screen = transitionContext?.viewController(forKey: .from)
+            as? DigitalCardAnimatorScreen2{
+            return screen.animateOutDuration()
         }
+        return 0
     }
     
-    func animateTransition(
+    public func animateTransition(
         using transitionContext: UIViewControllerContextTransitioning) {
         
         if isPresenting {
@@ -247,8 +258,10 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     }
     
     private func animateIn(_ transitionContext: UIViewControllerContextTransitioning) {
+        guard let to = transitionContext.viewController(forKey: .to)
+            as? DigitalCardAnimatorScreen2 else { return }
+        
         let containerView = transitionContext.containerView
-        let to = transitionContext.viewController(forKey: .to) as! ViewController2
         let toView = transitionContext.view(forKey: .to)!
         
         containerView.addSubview(toView)
@@ -259,10 +272,13 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     }
     
     private func animateOut(_ transitionContext: UIViewControllerContextTransitioning) {
+        guard let to = transitionContext.viewController(forKey: .to)
+                as? DigitalCardAnimatorScreen1,
+            let from = transitionContext.viewController(forKey: .from)
+                as? DigitalCardAnimatorScreen2 else { return }
+        
         let containerView = transitionContext.containerView
-        let to = transitionContext.viewController(forKey: .to) as! ViewController
         let toView = transitionContext.view(forKey: .to)!
-        let from = transitionContext.viewController(forKey: .from) as! ViewController2
         let fromView = transitionContext.view(forKey: .from)!
         
         // prepare views
