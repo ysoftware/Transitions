@@ -71,6 +71,16 @@ class ViewController: UIViewController {
         cardView.removeFromSuperview()
         stackView.insertArrangedSubview(cardView, at: 0)
     }
+    
+    func animateIn(duration: TimeInterval) -> CGRect {
+        UIView.animate(
+            withDuration: duration, delay: 0, options: .curveEaseInOut, animations: {
+                self.cardView.isHidden = false
+        }) { _ in
+            self.cardView.alpha = 1
+        }
+        return CGRect(origin: stackView.frame.origin, size: cardView.frame.size)
+    }
 }
 
 extension ViewController: UIViewControllerTransitioningDelegate {
@@ -96,6 +106,11 @@ extension ViewController: UIViewControllerTransitioningDelegate {
 
 class ViewController2: UIViewController {
     
+    private let fadeDuration: TimeInterval = 0.5
+    private let scaleDuration: TimeInterval = 0.8
+    private let scaleDelay: TimeInterval = 0.2
+    private let translateDuration: TimeInterval = 0.7
+    
     @IBOutlet weak var backgroundView: UIView!
     var cardView: UIView!
     
@@ -118,6 +133,85 @@ class ViewController2: UIViewController {
     @IBAction func didTap(_ sender: Any) {
         dismiss(animated: true, completion: nil)
     }
+    
+    func animateInDuration() -> TimeInterval {
+        return fadeDuration - scaleDelay + scaleDuration
+    }
+    
+    func animateOutDuration() -> TimeInterval {
+        return translateDuration
+    }
+    
+    func animateIn(scale: CGFloat, completion: @escaping ()->Void) {
+        
+        backgroundView.alpha = 0
+        cardView.transform = CGAffineTransform(scaleX: 0, y: 0)
+        
+        UIView.animate(withDuration: fadeDuration) {
+            self.backgroundView.alpha = 1
+        }
+        
+        UIView.animate(withDuration: scaleDuration,
+                       delay: scaleDelay,
+                       usingSpringWithDamping: 0.65,
+                       initialSpringVelocity: 0,
+                       options: .curveEaseInOut,
+                       animations: {
+                        
+                        let transform = CGAffineTransform(scaleX: scale, y: scale)
+                        self.cardView.transform = transform
+        }) { _ in
+            completion()
+        }
+    }
+    
+    func animateOut(newFrame: CGRect,
+                    fromScale: CGFloat,
+                    completion: @escaping ()->Void) {
+        
+        // get frames
+        let oldFrame = cardView.frame
+        
+        // create path
+        let path = UIBezierPath()
+        path.move(to: CGPoint(x: oldFrame.midX, y: oldFrame.midY))
+        path.addQuadCurve(to: CGPoint(x: newFrame.midX, y: newFrame.midY),
+                          controlPoint: CGPoint(x: newFrame.midX, y: oldFrame.midY))
+        
+        // setup animations
+        let scale = CAKeyframeAnimation(keyPath: "transform.scale")
+        scale.values = [fromScale, 1]
+        scale.duration = translateDuration
+        scale.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        
+        let translate = CAKeyframeAnimation(keyPath: "position")
+        translate.path = path.cgPath
+        translate.duration = translateDuration
+        translate.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        
+        let animations = CAAnimationGroup()
+        animations.animations = [scale, translate]
+        animations.duration = translateDuration
+        
+        // remove after animation finishes
+        cardView.transform = CGAffineTransform(scaleX: 0, y: 0)
+        
+        // add animations
+        cardView.layer.add(animations, forKey: "")
+        
+        // complete transition a couple of frames before screen2 goes blank
+        let duration = translateDuration - 0.05
+        
+        // add uiview animations
+        
+        UIView.animate(
+            withDuration: duration, delay: 0, options: .curveEaseInOut, animations: {
+                self.backgroundView.alpha = 0
+        }) { _ in
+            self.cardView.removeFromSuperview()
+            completion()
+        }
+    }
 }
 
 // MARK: - Animator
@@ -127,19 +221,17 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     public var isPresenting: Bool = true
     public var scaleView: CGFloat = 1
     
-    private let fadeDuration: TimeInterval = 0.5
-    private let scaleDuration: TimeInterval = 0.8
-    private let scaleDelay: TimeInterval = 0.2
-    private let translateDuration: TimeInterval = 0.7
-    
     func transitionDuration(
         using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
+        guard let transitionContext = transitionContext else { return 0 }
         
         if isPresenting {
-            return translateDuration
+            let to = transitionContext.viewController(forKey: .to) as! ViewController2
+            return to.animateInDuration()
         }
         else {
-            return fadeDuration - scaleDelay + scaleDuration
+            let from = transitionContext.viewController(forKey: .from) as! ViewController2
+            return from.animateOutDuration()
         }
     }
     
@@ -160,23 +252,8 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
         let toView = transitionContext.view(forKey: .to)!
         
         containerView.addSubview(toView)
-        to.backgroundView.alpha = 0
-        to.cardView.transform = CGAffineTransform(scaleX: 0, y: 0)
         
-        UIView.animate(withDuration: fadeDuration) {
-            to.backgroundView.alpha = 1
-        }
-        
-        UIView.animate(withDuration: scaleDuration,
-                       delay: scaleDelay,
-                       usingSpringWithDamping: 0.65,
-                       initialSpringVelocity: 0,
-                       options: .curveEaseInOut,
-                       animations: {
-                        
-                        to.cardView.transform = CGAffineTransform(scaleX: self.scaleView,
-                                                                  y: self.scaleView)
-        }) { _ in
+        to.animateIn(scale: scaleView) {
             transitionContext.completeTransition(true)
         }
     }
@@ -192,52 +269,10 @@ class DigitalCardAnimator: NSObject, UIViewControllerAnimatedTransitioning {
         containerView.addSubview(toView)
         containerView.addSubview(fromView)
         
-        // get frames
-        let oldFrame = from.cardView.frame
-        let newFrame = CGRect(origin: to.stackView.frame.origin,
-                              size: to.cardView.frame.size)
+        let duration = from.animateOutDuration()
+        let newFrame = to.animateIn(duration: duration)
         
-        // create path
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: oldFrame.midX, y: oldFrame.midY))
-        path.addQuadCurve(to: CGPoint(x: newFrame.midX, y: newFrame.midY),
-                          controlPoint: CGPoint(x: newFrame.midX, y: oldFrame.midY))
-        
-        // setup animations
-        let scale = CAKeyframeAnimation(keyPath: "transform.scale")
-        scale.values = [scaleView, 1]
-        scale.duration = translateDuration
-        scale.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        
-        let translate = CAKeyframeAnimation(keyPath: "position")
-        translate.path = path.cgPath
-        translate.duration = translateDuration
-        translate.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        
-        let animations = CAAnimationGroup()
-        animations.animations = [scale, translate]
-        animations.duration = translateDuration
-        
-        // remove after animation finishes
-        from.cardView.transform = CGAffineTransform(scaleX: 0, y: 0)
-        
-        // add animations
-        from.cardView.layer.add(animations, forKey: "")
-        
-        // complete transition a couple of frames before screen2 goes blank
-        let duration = translateDuration - 0.05
-        
-        // add uiview animations
-        
-        UIView.animate(
-            withDuration: duration, delay: 0, options: .curveEaseInOut, animations: {
-                
-                to.cardView.isHidden = false
-                from.backgroundView.alpha = 0
-        }) { _ in
-            
-            from.cardView.removeFromSuperview()
-            to.cardView.alpha = 1
+        from.animateOut(newFrame: newFrame, fromScale: scaleView) {
             transitionContext.completeTransition(true)
         }
     }
